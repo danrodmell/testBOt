@@ -115,12 +115,8 @@ def generate_trivia():
             statements = [f"{i+1}. '{c}' is a real open source project." for i, c in enumerate(choices)]
             statements[twist_index] = f"{twist_index+1}. '{twist}' is a real open source project."
             return {
-                "intro": "🌟 Ready for a challenge? Here are three project names. One of them is a clever fake! Can you spot the twist?",
-                "statements": "\n".join(statements),
+                "statements": statements,
                 "answer_index": twist_index,
-                "options": choices + [twist],
-                "twist": twist,
-                "outro": "Reply with the number you think is the twist!"
             }
         elif qtype == "artifact_name":
             df = oso_client.to_pandas("SELECT DISTINCT artifact_name FROM artifacts_v1 WHERE artifact_name IS NOT NULL LIMIT 20")
@@ -134,11 +130,8 @@ def generate_trivia():
             statements[twist_index] = f"{twist_index+1}. '{twist}' is a real open source artifact."
             return {
                 "intro": "🧩 Which of these is NOT a real open source artifact? Find the twist!",
-                "statements": "\n".join(statements),
+                "statements": statements,
                 "answer_index": twist_index,
-                "options": choices + [twist],
-                "twist": twist,
-                "outro": "Reply with the number you think is the twist!"
             }
         else:
             raise ValueError("No valid question types available.")
