@@ -78,53 +78,74 @@ def truncate_name(name, maxlen=25):
 
 import random
 
+# --- Fallback question bank ---
+FALLBACK_QUESTIONS = [
+    {
+        "intro": "🌟 Ready for a challenge? Here are three project names. One of them is a clever fake! Can you spot the twist?",
+        "statements": "1. 'OpenAI GPT' is a real open source project.\n2. 'TensorFlow' is a real open source project.\n3. 'QuantumBanana' is a real open source project.",
+        "answer_index": 2,
+        "options": ["OpenAI GPT", "TensorFlow", "QuantumBanana"],
+        "twist": "QuantumBanana",
+        "outro": "Reply with the number you think is the twist!"
+    },
+    {
+        "intro": "🧩 Which of these is NOT a real open source artifact? Find the twist!",
+        "statements": "1. 'NumPy' is a real open source artifact.\n2. 'PyTorch' is a real open source artifact.\n3. 'BananaTorch' is a real open source artifact.",
+        "answer_index": 2,
+        "options": ["NumPy", "PyTorch", "BananaTorch"],
+        "twist": "BananaTorch",
+        "outro": "Reply with the number you think is the twist!"
+    },
+]
+
 # --- MCP-style, human-centric question generator ---
 def generate_trivia():
     # Choose a question type that is human-friendly and based on verified columns
     qtypes = ["project_display", "artifact_name"]
     qtype = random.choice(qtypes)
-    intro = "Let's play a round of Two Truths and a Twist!"
-    outro = "Type the number of the statement you think is the twist."
-
-    if qtype == "project_display":
-        # Use display_name from projects_v1 for a more human, MCP-style feel
-        df = oso_client.to_pandas("SELECT DISTINCT display_name FROM projects_v1 WHERE display_name IS NOT NULL LIMIT 20")
-        names = [n for n in df["display_name"].dropna().unique() if isinstance(n, str) and len(n) < 40]
-        if len(names) < 3:
-            return {"error": "Not enough project names to generate question."}
-        choices = random.sample(names, 3)
-        twist = make_fake(choices[0])
-        twist_index = random.randint(0, 2)
-        statements = [f"{i+1}. '{c}' is a real open source project." for i, c in enumerate(choices)]
-        statements[twist_index] = f"{twist_index+1}. '{twist}' is a real open source project."
-        return {
-            "intro": "🌟 Ready for a challenge? Here are three project names. One of them is a clever fake! Can you spot the twist?",
-            "statements": "\n".join(statements),
-            "answer_index": twist_index,
-            "options": choices + [twist],
-            "twist": twist,
-            "outro": "Reply with the number you think is the twist!"
-        }
-    elif qtype == "artifact_name":
-        df = oso_client.to_pandas("SELECT DISTINCT artifact_name FROM artifacts_v1 WHERE artifact_name IS NOT NULL LIMIT 20")
-        names = [n for n in df["artifact_name"].dropna().unique() if isinstance(n, str) and len(n) < 40]
-        if len(names) < 3:
-            return {"error": "Not enough artifact names to generate question."}
-        choices = random.sample(names, 3)
-        twist = make_fake(choices[0])
-        twist_index = random.randint(0, 2)
-        statements = [f"{i+1}. '{c}' is a real open source artifact." for i, c in enumerate(choices)]
-        statements[twist_index] = f"{twist_index+1}. '{twist}' is a real open source artifact."
-        return {
-            "intro": "🧩 Which of these is NOT a real open source artifact? Find the twist!",
-            "statements": "\n".join(statements),
-            "answer_index": twist_index,
-            "options": choices + [twist],
-            "twist": twist,
-            "outro": "Reply with the number you think is the twist!"
-        }
-    else:
-        return {"error": "No valid question types available."}
+    try:
+        if qtype == "project_display":
+            df = oso_client.to_pandas("SELECT DISTINCT display_name FROM projects_v1 WHERE display_name IS NOT NULL LIMIT 20")
+            names = [n for n in df["display_name"].dropna().unique() if isinstance(n, str) and len(n) < 40]
+            if len(names) < 3:
+                raise ValueError("Not enough project names to generate question.")
+            choices = random.sample(names, 3)
+            twist = make_fake(choices[0])
+            twist_index = random.randint(0, 2)
+            statements = [f"{i+1}. '{c}' is a real open source project." for i, c in enumerate(choices)]
+            statements[twist_index] = f"{twist_index+1}. '{twist}' is a real open source project."
+            return {
+                "intro": "🌟 Ready for a challenge? Here are three project names. One of them is a clever fake! Can you spot the twist?",
+                "statements": "\n".join(statements),
+                "answer_index": twist_index,
+                "options": choices + [twist],
+                "twist": twist,
+                "outro": "Reply with the number you think is the twist!"
+            }
+        elif qtype == "artifact_name":
+            df = oso_client.to_pandas("SELECT DISTINCT artifact_name FROM artifacts_v1 WHERE artifact_name IS NOT NULL LIMIT 20")
+            names = [n for n in df["artifact_name"].dropna().unique() if isinstance(n, str) and len(n) < 40]
+            if len(names) < 3:
+                raise ValueError("Not enough artifact names to generate question.")
+            choices = random.sample(names, 3)
+            twist = make_fake(choices[0])
+            twist_index = random.randint(0, 2)
+            statements = [f"{i+1}. '{c}' is a real open source artifact." for i, c in enumerate(choices)]
+            statements[twist_index] = f"{twist_index+1}. '{twist}' is a real open source artifact."
+            return {
+                "intro": "🧩 Which of these is NOT a real open source artifact? Find the twist!",
+                "statements": "\n".join(statements),
+                "answer_index": twist_index,
+                "options": choices + [twist],
+                "twist": twist,
+                "outro": "Reply with the number you think is the twist!"
+            }
+        else:
+            raise ValueError("No valid question types available.")
+    except Exception as e:
+        # Fallback to local questions
+        fallback = random.choice(FALLBACK_QUESTIONS)
+        return fallback
 
 @app.get("/question")
 def get_question():
