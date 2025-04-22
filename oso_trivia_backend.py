@@ -72,112 +72,59 @@ def make_fake(name):
 def truncate_name(name, maxlen=25):
     return name if len(name) <= maxlen else name[:maxlen-3] + "..."
 
-# Generate a Two Truths and a Twist question using several templates
+# Only use columns verified from OSO schema probe
+# artifacts_v1: ['artifact_id', 'artifact_source_id', 'artifact_source', 'artifact_namespace', 'artifact_name']
+# projects_v1: ['project_id', 'project_source', 'project_namespace', 'project_name', 'display_name', 'description']
 
+import random
+
+# --- MCP-style, human-centric question generator ---
 def generate_trivia():
-    qtypes = ["project_name", "stars", "contributors", "security_lib"]  # Removed 'contract' due to OSO schema change
-    metrics = get_key_metrics()
-    if metrics:
-        qtypes.append("metric")
+    # Choose a question type that is human-friendly and based on verified columns
+    qtypes = ["project_display", "artifact_name"]
     qtype = random.choice(qtypes)
-    intro = "Spot the twist!"
-    outro = "Pick the twist!"
-    if qtype == "metric":
-        if not metrics:
-            qtype = "project_name"
-        else:
-            choices = [truncate_name(m) for m in random.sample(metrics, 1)]
-            twist = random.choice(["Unicorn Power", "Quantum Speed", "AI Sentience", "Zero Trust Magic"])
-            twist_index = 0
-            statements = [f"'{c}' is a tracked key metric in OSO analytics." for c in choices]
-            statements[twist_index] = f"'{twist}' is a tracked key metric in OSO analytics."
-            return {
-                "intro": intro,
-                "statements": format_statements(statements),
-                "answer_index": twist_index,
-                "options": choices + [twist],
-                "twist": twist,
-                "outro": outro
-            }
-    if qtype == "contract":
-        # Disabled contract question type due to OSO schema change
-        return {"error": "Contract-based questions are temporarily disabled due to OSO schema update."}
-    if qtype == "security_lib":
-        libs = [truncate_name(l) for l in get_security_libs()]
-        if not libs or len(libs) < 3:
-            qtype = "project_name"
-        else:
-            choices = random.sample(libs, 3)
-            twist = make_fake(choices[0])
-            twist_index = random.randint(0, 2)
-            statements = [f"'{c}' is an open source security library." for c in choices]
-            statements[twist_index] = f"'{twist}' is an open source security library."
-            return {
-                "intro": intro,
-                "statements": format_statements(statements),
-                "answer_index": twist_index,
-                "options": choices + [twist],
-                "twist": twist,
-                "outro": outro
-            }
-    if qtype == "stars":
-        data = get_project_stars()
-        if not data or len(data) < 3:
-            qtype = "project_name"
-        else:
-            choices = random.sample(data, 3)
-            choices = [{"project_name": truncate_name(c["project_name"]), "stars": c["stars"]} for c in choices]
-            twist_index = random.randint(0, 2)
-            twist = make_fake(choices[twist_index]["project_name"])
-            statements = [
-                f"'{c['project_name']}' has over {c['stars']} stars on GitHub." for c in choices
-            ]
-            statements[twist_index] = f"'{twist}' has over {choices[twist_index]['stars']} stars on GitHub."
-            return {
-                "intro": intro,
-                "statements": format_statements(statements),
-                "answer_index": twist_index,
-                "options": [c['project_name'] for c in choices] + [twist],
-                "twist": twist,
-                "outro": outro
-            }
-    if qtype == "contributors":
-        data = get_project_contributors()
-        if not data or len(data) < 3:
-            qtype = "project_name"
-        else:
-            choices = random.sample(data, 3)
-            choices = [{"project_name": truncate_name(c["project_name"]), "contributors": c["contributors"]} for c in choices]
-            twist_index = random.randint(0, 2)
-            twist = make_fake(choices[twist_index]["project_name"])
-            statements = [
-                f"'{c['project_name']}' has over {c['contributors']} contributors." for c in choices
-            ]
-            statements[twist_index] = f"'{twist}' has over {choices[twist_index]['contributors']} contributors."
-            return {
-                "intro": intro,
-                "statements": format_statements(statements),
-                "answer_index": twist_index,
-                "options": [c['project_name'] for c in choices] + [twist],
-                "twist": twist,
-                "outro": outro
-            }
-    # Default: project name only, but filtered
-    projects = [truncate_name(p) for p in get_human_projects()]
-    if not projects:
-        return None
-    twist = make_fake(projects[0])
-    statements = [f"'{p}' is a real open source project." for p in projects[:3]]
-    twist_index = random.randint(0, 2)
-    statements[twist_index] = f"'{twist}' is a real open source project."
-    return {
-        "intro": intro,
-        "statements": format_statements(statements),
-        "answer_index": twist_index,
-        "options": projects[:3] + [twist],
-        "twist": twist,
-        "outro": outro
-    }
+    intro = "Let's play a round of Two Truths and a Twist!"
+    outro = "Type the number of the statement you think is the twist."
+
+    if qtype == "project_display":
+        # Use display_name from projects_v1 for a more human, MCP-style feel
+        df = oso_client.to_pandas("SELECT DISTINCT display_name FROM projects_v1 WHERE display_name IS NOT NULL LIMIT 20")
+        names = [n for n in df["display_name"].dropna().unique() if isinstance(n, str) and len(n) < 40]
+        if len(names) < 3:
+            return {"error": "Not enough project names to generate question."}
+        choices = random.sample(names, 3)
+        twist = make_fake(choices[0])
+        twist_index = random.randint(0, 2)
+        statements = [f"{i+1}. '{c}' is a real open source project." for i, c in enumerate(choices)]
+        statements[twist_index] = f"{twist_index+1}. '{twist}' is a real open source project."
+        return {
+            "intro": "🌟 Ready for a challenge? Here are three project names. One of them is a clever fake! Can you spot the twist?",
+            "statements": "\n".join(statements),
+            "answer_index": twist_index,
+            "options": choices + [twist],
+            "twist": twist,
+            "outro": "Reply with the number you think is the twist!"
+        }
+    elif qtype == "artifact_name":
+        df = oso_client.to_pandas("SELECT DISTINCT artifact_name FROM artifacts_v1 WHERE artifact_name IS NOT NULL LIMIT 20")
+        names = [n for n in df["artifact_name"].dropna().unique() if isinstance(n, str) and len(n) < 40]
+        if len(names) < 3:
+            return {"error": "Not enough artifact names to generate question."}
+        choices = random.sample(names, 3)
+        twist = make_fake(choices[0])
+        twist_index = random.randint(0, 2)
+        statements = [f"{i+1}. '{c}' is a real open source artifact." for i, c in enumerate(choices)]
+        statements[twist_index] = f"{twist_index+1}. '{twist}' is a real open source artifact."
+        return {
+            "intro": "🧩 Which of these is NOT a real open source artifact? Find the twist!",
+            "statements": "\n".join(statements),
+            "answer_index": twist_index,
+            "options": choices + [twist],
+            "twist": twist,
+            "outro": "Reply with the number you think is the twist!"
+        }
+    else:
+        return {"error": "No valid question types available."}
 
 @app.get("/question")
 def get_question():
