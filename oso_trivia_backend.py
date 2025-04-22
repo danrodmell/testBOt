@@ -53,9 +53,8 @@ def get_key_metrics():
         return []
 
 def get_contract_names():
-    df = oso_client.to_pandas("SELECT DISTINCT contract_name FROM contracts_v0 LIMIT 100")
-    contracts = [c for c in df["contract_name"].dropna().unique() if isinstance(c, str) and len(c) < 40 and not c.startswith('0x')]
-    return contracts
+    # Disabled due to OSO schema change: contract_name column not found
+    return []
 
 def get_security_libs():
     df = oso_client.to_pandas("SELECT DISTINCT project_name FROM projects_v1 WHERE LOWER(project_name) LIKE '%security%' OR LOWER(project_name) LIKE '%audit%' OR LOWER(project_name) LIKE '%safe%' LIMIT 100")
@@ -76,7 +75,7 @@ def truncate_name(name, maxlen=25):
 # Generate a Two Truths and a Twist question using several templates
 
 def generate_trivia():
-    qtypes = ["project_name", "stars", "contributors", "contract", "security_lib"]
+    qtypes = ["project_name", "stars", "contributors", "security_lib"]  # Removed 'contract' due to OSO schema change
     metrics = get_key_metrics()
     if metrics:
         qtypes.append("metric")
@@ -101,23 +100,8 @@ def generate_trivia():
                 "outro": outro
             }
     if qtype == "contract":
-        contracts = [truncate_name(c) for c in get_contract_names()]
-        if not contracts or len(contracts) < 3:
-            qtype = "project_name"
-        else:
-            choices = random.sample(contracts, 3)
-            twist = make_fake(choices[0])
-            twist_index = random.randint(0, 2)
-            statements = [f"'{c}' is a deployed smart contract in the OSO data lake." for c in choices]
-            statements[twist_index] = f"'{twist}' is a deployed smart contract in the OSO data lake."
-            return {
-                "intro": intro,
-                "statements": format_statements(statements),
-                "answer_index": twist_index,
-                "options": choices + [twist],
-                "twist": twist,
-                "outro": outro
-            }
+        # Disabled contract question type due to OSO schema change
+        return {"error": "Contract-based questions are temporarily disabled due to OSO schema update."}
     if qtype == "security_lib":
         libs = [truncate_name(l) for l in get_security_libs()]
         if not libs or len(libs) < 3:
