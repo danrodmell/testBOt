@@ -150,3 +150,6 @@ def get_question():
     except Exception as e:
         print("ERROR in /question:", e)
         return {"error": str(e)}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("oso_trivia_backend:app", host="0.0.0.0", port=10000, reload=False)
