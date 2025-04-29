@@ -1,0 +1,39 @@
+Section,Name,Type/Method,Description,Example,Notes
+API Endpoint,/api/login,POST,User login endpoint,"POST /api/login, {username, password}",Returns JWT token
+API Endpoint,/api/users,GET,List all users,"GET /api/users",Returns user list
+API Endpoint,/api/game/start,POST,Start new game session,"POST /api/game/start, {user_id}",Returns game_id
+API Endpoint,/api/game/answer,POST,Submit answer to question,"POST /api/game/answer, {game_id, answer}",Returns score and correctness
+API Endpoint,/api/leaderboard,GET,Get leaderboard,"GET /api/leaderboard",Returns list of top users
+Backend Module,user.py,Module,Handles user management functions,"create_user, get_user",Depends on db, auth
+Backend Module,auth.py,Module,Handles authentication and JWT,"login_user, verify_token",Depends on db
+Backend Module,game.py,Module,Game session logic,"start_game, submit_answer",Depends on db, user
+Backend Module,leaderboard.py,Module,Leaderboard calculation,"get_leaderboard",Depends on db
+Backend Module,db.py,Module,Database connection,"get_db_session",Uses SQLAlchemy
+Frontend Component,LoginForm,Component,User login form,"<LoginForm />",Consumes /api/login
+Frontend Component,UserList,Component,Displays user list,"<UserList users={...} />",Consumes /api/users
+Frontend Component,GameBoard,Component,Main trivia game UI,"<GameBoard questions={...} />",Consumes /api/game/start
+Frontend Component,Leaderboard,Component,Shows leaderboard,"<Leaderboard scores={...} />",Consumes /api/leaderboard
+Frontend Component,Profile,Component,User profile management,"<Profile user={...} />",Consumes /api/users/{id}
+Data Model,User,Entity,User data model,"id, name, email, password_hash",Has many GameSessions
+Data Model,GameSession,Entity,Game session data,"id, user_id, score, started_at",Belongs to User
+Data Model,Question,Entity,Trivia question,"id, question_text, answer",Has many GameSessions
+Env Variable,DB_URL,String,Database connection string,"postgres://user:pass@host/db",Required
+Env Variable,SECRET_KEY,String,JWT signing key,"supersecret123",Required
+Env Variable,API_URL,String,Backend API base URL,"https://api.example.com",Required
+Env Variable,FRONTEND_URL,String,Frontend base URL,"https://app.example.com",Optional
+Env Variable,TELEGRAM_BOT_TOKEN,String,Telegram bot token,"123456:ABC-DEF",Required
+Env Variable,REDIS_URL,String,Redis cache URL,"redis://localhost:6379/0",Optional
+Env Variable,LOG_LEVEL,String,Logging verbosity,"INFO",Optional
+Env Variable,PORT,Number,Server port,"8000",Optional
+Env Variable,ENV,String,Environment (dev/prod),"production",Optional
+Env Variable,EMAIL_HOST,String,SMTP server,"smtp.gmail.com",Optional
+Tool,FastAPI,Framework,Python web API framework,"pip install fastapi",Backend
+Tool,React,Framework,Frontend UI framework,"npx create-react-app",Frontend
+Tool,PostgreSQL,Database,Relational database,"psql --version",Backend
+Tool,SQLAlchemy,ORM,Python ORM for DB access,"pip install sqlalchemy",Backend
+Tool,Docker,Container,Containerization tool,"docker build .",Deployment
+Tool,Git,Version Control,Source code versioning,"git commit -m 'msg'",All
+Tool,Pytest,Testing,Python testing framework,"pytest",Backend
+Tool,Uvicorn,Server,ASGI server for FastAPI,"uvicorn main:app",Backend
+Tool,Gunicorn,Server,WSGI server for production,"gunicorn main:app",Backend
+Tool,Postman,Testing,API testing tool,"Import OpenAPI spec",API

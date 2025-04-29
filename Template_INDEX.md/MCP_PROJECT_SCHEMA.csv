@@ -1,0 +1,10 @@
+Section,Name,Type/Method,Description,Example,Notes
+API Endpoint,/question,GET,Get trivia question,GET /question,{"statements": [...], "answer_index": 2}
+Backend Module,backend.py,Module,Serves trivia question,get_question,All logic in one file
+Data Model,Question,statements,answer_index,Simple dict,{"statements": [...], "answer_index": 2}
+Env Variable,TELEGRAM_BOT_TOKEN,String,Telegram bot token,123456:ABC-DEF,Required
+Env Variable,BACKEND_URL,String,Backend API endpoint,https://backend.onrender.com/question,Required
+Tool,FastAPI,Framework,Python web API framework,pip install fastapi,Backend
+Tool,python-telegram-bot,Library,Telegram bot integration,pip install python-telegram-bot,Bot
+Tool,requests,Library,HTTP requests,pip install requests,Bot
+Tool,uvicorn,Server,ASGI server,uvicorn backend:app,Bot
