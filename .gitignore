@@ -1,16 +1,4 @@
-__pycache__/
-.env
-*.pyc
 .DS_Store
-*.sqlite3
-instance/
-.env.*
-*.log
-*.db
-.vscode/
-.idea/
-*.egg-info/
-*.bak
-# Deployment
-netlify.toml
-windsurf_deployment.yaml
+.venv/
+__pycache__/
+*.pyc
